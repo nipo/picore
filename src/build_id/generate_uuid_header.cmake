@@ -1,0 +1,19 @@
+execute_process(
+    COMMAND bash -c "uuidgen"
+    OUTPUT_VARIABLE BUILD_UUID
+)
+
+string(STRIP "${BUILD_UUID}" BUILD_UUID)
+
+set(BUILD_UUID_HEADER "#define BUILD_UUID \"${BUILD_UUID}\"
+")
+
+if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/build_uuid.h)
+    file(READ ${CMAKE_CURRENT_BINARY_DIR}/build_uuid.h CURRENT_BUILD_UUID_HEADER)
+else()
+    set(CURRENT_BUILD_UUID_HEADER "")
+endif()
+
+if (NOT "${CURRENT_BUILD_UUID_HEADER}" STREQUAL "${BUILD_UUID_HEADER}")
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/build_uuid.h "${BUILD_UUID_HEADER}")
+endif()

@@ -1,0 +1,4 @@
+add_subdirectory(binary_info)
+add_subdirectory(usb_loopback)
+add_subdirectory(stdio_usb)
+add_subdirectory(ws2812_blinker)

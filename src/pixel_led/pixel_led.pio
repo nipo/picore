@@ -1,0 +1,61 @@
+.program pixel_led_tx
+.side_set 1 optional
+
+    .wrap_target
+    pull ifempty block    side 0 [2]
+    nop                   side 1 [2]
+    out pins 1                   [3]
+    .wrap
+
+.program pixel_led_tx_inv
+.side_set 1 optional
+
+    .wrap_target
+    pull ifempty block    side 1 [2]
+    nop                   side 0 [2]
+    out pins 1                   [3]
+    .wrap
+
+% c-sdk {
+#include "hardware/clocks.h"
+
+static inline
+void pixel_led_pio_init(PIO pio)
+{
+    pio_clear_instruction_memory(pio);
+    pio_add_program_at_offset(pio, &pixel_led_tx_program, 0);
+    pio_add_program_at_offset(pio, &pixel_led_tx_inv_program, pixel_led_tx_program.length);
+}
+
+static inline
+void pixel_led_sm_init(PIO pio, uint sm, uint pin_data, bool inv)
+{
+    uint8_t offset = inv ? pixel_led_tx_program.length : 0;
+    uint32_t tx_pin_map = (1 << pin_data);
+
+    pio_sm_set_pins_with_mask(pio, sm, tx_pin_map, tx_pin_map);
+    pio_sm_set_pindirs_with_mask(pio, sm, tx_pin_map, tx_pin_map);
+    pio_gpio_init(pio, pin_data);
+
+    pio_sm_config c;
+    if (inv)
+        c = pixel_led_tx_inv_program_get_default_config(offset);
+    else
+        c = pixel_led_tx_program_get_default_config(offset);
+
+    // OUT shifts to left, no autopull
+    sm_config_set_out_shift(&c, false, false, 24);
+    sm_config_set_out_pins(&c, pin_data, 1);
+    sm_config_set_sideset_pins(&c, pin_data);
+
+    // We only need TX, merge fifos
+    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
+
+    // Run SM at 8MHz
+    float div = (float)clock_get_hz(clk_sys) / 8.0e6f;
+    sm_config_set_clkdiv(&c, div);
+
+    pio_sm_init(pio, sm, offset, &c);
+}
+
+%}
