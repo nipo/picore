@@ -80,7 +80,7 @@ void pr_queue_producer_set(struct pr_queue *queue,
     queue->producer = task;
 }
 
-pr_error_t pr_queue_prsh(struct pr_queue *queue,
+pr_error_t pr_queue_push(struct pr_queue *queue,
                          void *entry)
 {
     uint32_t ret, irq;

@@ -32,7 +32,7 @@ void pr_queue_consumer_set(struct pr_queue *queue,
 void pr_queue_producer_set(struct pr_queue *queue,
                            struct pr_task *task);
 
-pr_error_t pr_queue_prsh(struct pr_queue *queue,
+pr_error_t pr_queue_push(struct pr_queue *queue,
                          void *entry);
 
 pr_error_t pr_queue_pop(struct pr_queue *queue,
