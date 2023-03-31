@@ -46,6 +46,11 @@ void on_pio0_irq0(void)
 
         if (strip)
             on_pixel_led_irq(strip);
+        else
+            pio_set_irq0_source_mask_enabled(
+                pio,
+                (1 << (PIO_INTR_SM0_TXNFULL_LSB + sm)),
+                false);
     }
 }
 
@@ -65,7 +70,6 @@ void on_pio1_irq0(void)
                 pio,
                 (1 << (PIO_INTR_SM0_TXNFULL_LSB + sm)),
                 false);
-
     }
 }
 
@@ -116,8 +120,8 @@ void pr_pixel_led_strip_init(struct pr_pixel_led_strip *strip,
 {
     memset(strip, 0, sizeof(*strip));
 
-    assert(pio_index < 2);
-    assert(sm < 4);
+    hard_assert(pio_index < 2);
+    hard_assert(sm < 4);
     
     strip->pio = pio_index ? pio1 : pio0;
     strip->sm = sm;
@@ -127,7 +131,7 @@ void pr_pixel_led_strip_init(struct pr_pixel_led_strip *strip,
     pr_task_init(&strip->done_task, queue, on_done);
 
     strip->pixel_data = malloc(4 * led_count);
-    assert(strip->pixel_data);
+    hard_assert(strip->pixel_data);
 
     memset(strip->pixel_data, 0, 4 * led_count);
 
@@ -142,8 +146,6 @@ void pr_pixel_led_strip_init(struct pr_pixel_led_strip *strip,
         irq_add_shared_handler(irq,
                                pio_index ? on_pio1_irq0 : on_pio0_irq0,
                                PICO_SHARED_IRQ_HANDLER_DEFAULT_ORDER_PRIORITY);
-        user_irq_claim(irq);
-        irq_set_enabled(irq, 1);
     }
 
     strip->inv = inv;
@@ -152,6 +154,11 @@ void pr_pixel_led_strip_init(struct pr_pixel_led_strip *strip,
     pio_sm_set_enabled(strip->pio, sm, true);
 
     pr_task_exec(&strip->refresh_task);
+
+    if (sm == 0) {
+        user_irq_claim(irq);
+        irq_set_enabled(irq, 1);
+    }
 }
 
 void pr_pixel_led_refresh(struct pr_pixel_led_strip *strip)
