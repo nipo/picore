@@ -13,8 +13,6 @@ struct pr_queue
     void **entry;
     uint32_t size;
     uint32_t wptr, rptr, free, used;
-    spin_lock_t *lock;
-    int lock_no;
 };
 
 void pr_queue_init(struct pr_queue *queue,

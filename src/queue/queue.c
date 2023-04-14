@@ -6,9 +6,24 @@
 #include <pr/task.h>
 #include <pr/queue.h>
 
+static spin_lock_t *lock = NULL;
+static int lock_no = -1;
+
+static
+void lock_init(void)
+{
+    if (lock)
+        return;
+
+    lock_no = spin_lock_claim_unused(1);
+    lock = spin_lock_instance(lock_no);
+}
+
 void pr_queue_init(struct pr_queue *queue,
                    size_t size)
 {
+    lock_init();
+    
     queue->entry = malloc(size * sizeof(void*));
     assert(queue->entry);
     queue->size = size;
@@ -18,8 +33,6 @@ void pr_queue_init(struct pr_queue *queue,
     queue->rptr = 0;
     queue->free = size;
     queue->used = 0;
-    queue->lock_no = spin_lock_claim_unused(1);
-    queue->lock = spin_lock_instance(queue->lock_no);
 }
 
 bool pr_queue_is_empty(struct pr_queue *queue)
@@ -27,9 +40,9 @@ bool pr_queue_is_empty(struct pr_queue *queue)
     uint32_t irq;
     bool ret;
 
-    irq = spin_lock_blocking(queue->lock);
+    irq = spin_lock_blocking(lock);
     ret = queue->used == 0;
-    spin_unlock(queue->lock, irq);
+    spin_unlock(lock, irq);
 
     return ret;
 }
@@ -39,9 +52,9 @@ bool pr_queue_is_full(struct pr_queue *queue)
     uint32_t irq;
     bool ret;
 
-    irq = spin_lock_blocking(queue->lock);
+    irq = spin_lock_blocking(lock);
     ret = queue->free == 0;
-    spin_unlock(queue->lock, irq);
+    spin_unlock(lock, irq);
 
     return ret;
 }
@@ -50,9 +63,9 @@ size_t pr_queue_available(struct pr_queue *queue)
 {
     uint32_t ret, irq;
 
-    irq = spin_lock_blocking(queue->lock);
+    irq = spin_lock_blocking(lock);
     ret = queue->used;
-    spin_unlock(queue->lock, irq);
+    spin_unlock(lock, irq);
 
     return ret;
 }
@@ -61,9 +74,9 @@ size_t pr_queue_free(struct pr_queue *queue)
 {
     uint32_t ret, irq;
 
-    irq = spin_lock_blocking(queue->lock);
+    irq = spin_lock_blocking(lock);
     ret = queue->free;
-    spin_unlock(queue->lock, irq);
+    spin_unlock(lock, irq);
 
     return ret;
 }
@@ -85,7 +98,7 @@ pr_error_t pr_queue_push(struct pr_queue *queue,
 {
     uint32_t ret, irq;
 
-    irq = spin_lock_blocking(queue->lock);
+    irq = spin_lock_blocking(lock);
 
     if (queue->free) {
         queue->free--;
@@ -98,7 +111,7 @@ pr_error_t pr_queue_push(struct pr_queue *queue,
         ret = PR_ERR_MEMORY;
     }
     
-    spin_unlock(queue->lock, irq);
+    spin_unlock(lock, irq);
 
     if (!ret)
         pr_task_exec(queue->consumer);
@@ -111,7 +124,7 @@ pr_error_t pr_queue_pop(struct pr_queue *queue,
 {
     uint32_t ret, irq;
 
-    irq = spin_lock_blocking(queue->lock);
+    irq = spin_lock_blocking(lock);
 
     if (queue->used) {
         queue->free++;
@@ -124,7 +137,7 @@ pr_error_t pr_queue_pop(struct pr_queue *queue,
         ret = PR_ERR_MEMORY;
     }
     
-    spin_unlock(queue->lock, irq);
+    spin_unlock(lock, irq);
 
     if (!ret)
         pr_task_exec(queue->producer);
