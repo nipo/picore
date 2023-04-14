@@ -12,5 +12,6 @@ typedef int8_t pr_error_t;
 #define PR_ERR_ADDRESS -4
 #define PR_ERR_TIMEOUT -5
 #define PR_ERR_INVAL -6
+#define PR_ERR_BUSY -7
 
 #endif
