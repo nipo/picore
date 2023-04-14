@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <hardware/sync.h>
 #include <pico/time.h>
+#include <pr/struct_compose.h>
 
 struct pr_task;
 struct pr_task_queue;
@@ -11,20 +12,7 @@ struct pr_task_queue;
 typedef void pr_task_handler_t(struct pr_task *);
 
 #define PR_TASK_STRUCT_COMPOSE(struct_name, field)                        \
-                                                                        \
-    static inline                                                       \
-    struct struct_name *struct_name##_from_##field(struct pr_task *ptask) \
-    {                                                                   \
-        const ptrdiff_t field_offset = offsetof(struct struct_name, field); \
-        return (struct struct_name *)((uintptr_t)ptask - field_offset); \
-    }                                                                   \
-                                                                        \
-    static inline                                                       \
-    const struct struct_name *const_##struct_name##_from_##field(const struct pr_task *ptask) \
-    {                                                                   \
-        const ptrdiff_t field_offset = offsetof(struct struct_name, field); \
-        return (const struct struct_name *)((uintptr_t)ptask - field_offset); \
-    }
+    PR_STRUCT_COMPOSE(struct_name, pr_task, field)
 
 #define PR_TASK_FLAG_PENDING 1
 
