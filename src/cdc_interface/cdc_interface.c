@@ -45,7 +45,7 @@ size_t from_usb_try_recv(struct pr_cdc_interface *intf)
     uint8_t *tr_data;
     size_t tr_size = pr_fifo_write_prepare(intf->from_usb, usb_available, &tr_data);
     size_t read_size = tud_cdc_n_read(intf->index, tr_data, tr_size);
-    assert(tr_size == read_size);
+    hard_assert(tr_size == read_size);
     pr_fifo_write_done(intf->from_usb, tr_size);
 
     return tr_size;
@@ -70,6 +70,8 @@ void handler(struct pr_task *task)
         if (from_usb_try_recv(intf)) {
             intf->events |= PR_CDC_INTERFACE_EVENT_RX;
         }
+
+        pr_task_exec_in_ms(&intf->handler, 10);
     } else {
         if (intf->open) {
             intf->open = 0;
