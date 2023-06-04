@@ -15,6 +15,7 @@ struct pr_uart
     struct pr_task from_port_task;
     uint8_t rxbuf, txbuf;
     uint8_t rxbuf_free, txbuf_busy;
+    bool has_cts, has_rts;
 };
 
 PR_TASK_STRUCT_COMPOSE(pr_uart, from_port_task);
@@ -35,5 +36,9 @@ void pr_uart_config_set(struct pr_uart *uart,
 
 void pr_uart_flow_control_set(struct pr_uart *uart,
                               bool ctsrts_enable);
+
+void pr_uart_attach(struct pr_uart *uart,
+                    struct pr_fifo *from_uart,
+                    struct pr_fifo *to_uart);
 
 #endif
