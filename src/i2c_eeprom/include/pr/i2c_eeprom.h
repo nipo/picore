@@ -30,6 +30,7 @@ struct pr_i2c_eeprom
 enum pr_i2c_eeprom_type
 {
     PR_I2C_EEPROM_24LC08,
+    PR_I2C_EEPROM_24AA64,
 };
 
 pr_error_t pr_i2c_eeprom_init(struct pr_i2c_eeprom *i2c_eeprom,
