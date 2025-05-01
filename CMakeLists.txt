@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+#cmake_minimum_required(VERSION 4.0)
 
 if (NOT TARGET _picore_inclusion_marker)
     add_library(_picore_inclusion_marker INTERFACE)
