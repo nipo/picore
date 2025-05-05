@@ -6,6 +6,7 @@
 #include <pr/error.h>
 #include <pr/i2c_bus.h>
 
+static
 i2c_inst_t *instance_for_pin(uint8_t pin)
 {
     int index = (pin & 2) >> 1;
