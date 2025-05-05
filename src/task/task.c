@@ -111,3 +111,14 @@ void pr_task_exec_in_ms(struct pr_task *t, uint64_t ms)
     t->alarm = add_alarm_in_ms(ms, ptask_alarm, t, 1);
 }
 
+bool pr_task_queue_is_empty(struct pr_task_queue *queue)
+{
+    bool empty;
+
+    uint32_t irq = spin_lock_blocking(queue->lock);
+    empty = !queue->first;
+    spin_unlock(queue->lock, irq);
+
+    return empty;
+}
+

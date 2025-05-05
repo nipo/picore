@@ -47,6 +47,8 @@ int pr_task_cancel(struct pr_task *t);
 
 void pr_task_queue_init(struct pr_task_queue *q);
 
+bool pr_task_queue_is_empty(struct pr_task_queue *q);
+
 void pr_task_queue_run_until_empty(struct pr_task_queue *q);
 
 #endif
