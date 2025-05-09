@@ -6,6 +6,9 @@
 #include <pr/task.h>
 #include <pr/fifo.h>
 
+static int lock_no = -1;
+spin_lock_t *lock;
+
 void pr_fifo_init(struct pr_fifo *fifo,
                size_t size)
 {
@@ -18,20 +21,23 @@ void pr_fifo_init(struct pr_fifo *fifo,
     fifo->rptr = 0;
     fifo->free = size;
     fifo->used = 0;
-    fifo->lock_no = spin_lock_claim_unused(1);
-    fifo->lock = spin_lock_instance(fifo->lock_no);
+
+    if (lock_no == -1) {
+        lock_no = spin_lock_claim_unused(1);
+        lock = spin_lock_instance(lock_no);
+    }
 }
 
 void pr_fifo_clear(struct pr_fifo *fifo)
 {
     uint32_t irq;
 
-    irq = spin_lock_blocking(fifo->lock);
+    irq = spin_lock_blocking(lock);
     fifo->used = 0;
     fifo->free = fifo->size;
     fifo->rptr = 0;
     fifo->wptr = 0;
-    spin_unlock(fifo->lock, irq);
+    spin_unlock(lock, irq);
 }
 
 bool pr_fifo_is_empty(struct pr_fifo *fifo)
@@ -39,9 +45,9 @@ bool pr_fifo_is_empty(struct pr_fifo *fifo)
     uint32_t irq;
     bool ret;
 
-    irq = spin_lock_blocking(fifo->lock);
+    irq = spin_lock_blocking(lock);
     ret = fifo->used == 0;
-    spin_unlock(fifo->lock, irq);
+    spin_unlock(lock, irq);
 
     return ret;
 }
@@ -51,9 +57,9 @@ bool pr_fifo_is_full(struct pr_fifo *fifo)
     uint32_t irq;
     bool ret;
 
-    irq = spin_lock_blocking(fifo->lock);
+    irq = spin_lock_blocking(lock);
     ret = fifo->free == 0;
-    spin_unlock(fifo->lock, irq);
+    spin_unlock(lock, irq);
 
     return ret;
 }
@@ -62,9 +68,9 @@ size_t pr_fifo_available(struct pr_fifo *fifo)
 {
     uint32_t ret, irq;
 
-    irq = spin_lock_blocking(fifo->lock);
+    irq = spin_lock_blocking(lock);
     ret = fifo->used;
-    spin_unlock(fifo->lock, irq);
+    spin_unlock(lock, irq);
 
     return ret;
 }
@@ -73,9 +79,9 @@ size_t pr_fifo_free(struct pr_fifo *fifo)
 {
     uint32_t ret, irq;
 
-    irq = spin_lock_blocking(fifo->lock);
+    irq = spin_lock_blocking(lock);
     ret = fifo->free;
-    spin_unlock(fifo->lock, irq);
+    spin_unlock(lock, irq);
 
     return ret;
 }
@@ -99,7 +105,7 @@ size_t pr_fifo_read_prepare(struct pr_fifo *fifo,
     size_t rptr = 0;
     uint32_t irq;
 
-    irq = spin_lock_blocking(fifo->lock);
+    irq = spin_lock_blocking(lock);
     if (fifo->used < size)
         size = fifo->used;
 
@@ -113,7 +119,7 @@ size_t pr_fifo_read_prepare(struct pr_fifo *fifo,
         if (fifo->rptr == fifo->size)
             fifo->rptr = 0;
     }
-    spin_unlock(fifo->lock, irq);
+    spin_unlock(lock, irq);
     
     *data = fifo->buffer + rptr;
 
@@ -129,10 +135,10 @@ void pr_fifo_read_done(struct pr_fifo *fifo,
     if (!size)
         return;
     
-    irq = spin_lock_blocking(fifo->lock);
+    irq = spin_lock_blocking(lock);
     fifo->free += size;
     on_copy = fifo->producer;
-    spin_unlock(fifo->lock, irq);
+    spin_unlock(lock, irq);
 
     pr_task_exec(on_copy);
 }
@@ -144,7 +150,7 @@ size_t pr_fifo_write_prepare(struct pr_fifo *fifo,
     size_t wptr = 0;
     uint32_t irq;
 
-    irq = spin_lock_blocking(fifo->lock);
+    irq = spin_lock_blocking(lock);
     if (fifo->free < size)
         size = fifo->free;
 
@@ -158,7 +164,7 @@ size_t pr_fifo_write_prepare(struct pr_fifo *fifo,
         if (fifo->wptr == fifo->size)
             fifo->wptr = 0;
     }
-    spin_unlock(fifo->lock, irq);
+    spin_unlock(lock, irq);
     
     *data = fifo->buffer + wptr;
 
@@ -174,10 +180,10 @@ void pr_fifo_write_done(struct pr_fifo *fifo,
     if (!size)
         return;
     
-    irq = spin_lock_blocking(fifo->lock);
+    irq = spin_lock_blocking(lock);
     fifo->used += size;
     on_copy = fifo->consumer;
-    spin_unlock(fifo->lock, irq);
+    spin_unlock(lock, irq);
 
     pr_task_exec(on_copy);
 }
@@ -242,7 +248,7 @@ size_t pr_fifo_peek(struct pr_fifo *fifo,
     uint32_t irq;
     size_t s1, s2;
 
-    irq = spin_lock_blocking(fifo->lock);
+    irq = spin_lock_blocking(lock);
     if (fifo->used < size)
         size = fifo->used;
 
@@ -258,7 +264,7 @@ size_t pr_fifo_peek(struct pr_fifo *fifo,
         memcpy(data, fifo->buffer + rptr, s1);
     if (s2)
         memcpy(data + s1, fifo->buffer, s2);
-    spin_unlock(fifo->lock, irq);
+    spin_unlock(lock, irq);
 
     return size;
 }
