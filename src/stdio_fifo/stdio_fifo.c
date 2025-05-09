@@ -40,6 +40,6 @@ void pr_stdio_fifo_driver_bind(struct pr_fifo *fifo_stdout, struct pr_fifo *fifo
     driver.base.crlf_enabled = false;
 #endif
     
-    stdio_set_driver_enabled(&driver, true);
+    stdio_set_driver_enabled(&driver.base, true);
 }
 
