@@ -1,6 +1,7 @@
 add_executable(stdio_usb main.c usb_descriptors.c)
 
 target_link_libraries(stdio_usb
+                      hardware_clocks
                       pico_stdlib
                       pico_stdio
                       pico_unique_id

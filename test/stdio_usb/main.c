@@ -1,4 +1,5 @@
 #include <pico/stdlib.h>
+#include <hardware/clocks.h>
 #include <string.h>
 #include <tusb.h>
 #include <pr/tiny_usb.h>

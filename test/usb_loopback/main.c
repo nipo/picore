@@ -1,4 +1,5 @@
 #include <hardware/irq.h>
+#include <hardware/clocks.h>
 #include <hardware/structs/sio.h>
 #include <pico/stdlib.h>
 #include <string.h>

@@ -3,6 +3,7 @@ add_executable(usb_loopback main.c usb_descriptors.c)
 include_directories(usb_loopback PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(usb_loopback PUBLIC
+                      hardware_clocks
                       pico_multicore
                       pico_stdlib
                       pr_fifo

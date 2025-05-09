@@ -3,6 +3,8 @@
 #include <pr/pixel_led.h>
 #include <pico/stdlib.h>
 #include <hardware/gpio.h>
+#include <hardware/clocks.h>
+#include <string.h>
 #include <pr/pixel_led.h>
 
 #define LED_PIN 1
