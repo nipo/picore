@@ -1,6 +1,7 @@
 add_subdirectory(error)
 add_subdirectory(i2c_bus)
 add_subdirectory(i2c_eeprom)
+add_subdirectory(i2c_gpio)
 add_subdirectory(task)
 add_subdirectory(fifo)
 add_subdirectory(binary_info_reader)
