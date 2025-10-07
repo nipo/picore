@@ -19,7 +19,7 @@ struct pr_i2c_gpio_vtable
                       uint32_t *value);
 
     pr_error_t (*pull_en)(struct pr_i2c_gpio *i2c_gpio,
-                          uint32_t mask, uint32_t value);
+                          uint32_t mask, uint32_t enable, uint32_t bias);
 };
 
 struct pr_i2c_gpio
@@ -29,11 +29,12 @@ struct pr_i2c_gpio
     const struct pr_i2c_gpio_vtable *vtable;
     uint32_t set_cache;
     uint32_t oe_cache;
-    uint32_t pull_cache;
+    uint32_t pull_bias_cache;
     uint32_t pull_en_cache;
 };
 
 extern const struct pr_i2c_gpio_vtable pr_i2c_gpio_tca9534;
+extern const struct pr_i2c_gpio_vtable pr_i2c_gpio_pca9575;
 
 pr_error_t pr_i2c_gpio_init(struct pr_i2c_gpio *i2c_gpio,
                             const struct pr_i2c_gpio_vtable *vtable,
@@ -60,11 +61,11 @@ pr_error_t pr_i2c_gpio_oe(struct pr_i2c_gpio *i2c_gpio,
 
 static inline
 pr_error_t pr_i2c_gpio_pull_en(struct pr_i2c_gpio *i2c_gpio,
-                           uint32_t mask, uint32_t value)
+                               uint32_t mask, uint32_t enable, uint32_t bias)
 {
     if (!i2c_gpio->vtable->pull_en)
         return PR_ERR_IMPL;
-    return i2c_gpio->vtable->pull_en(i2c_gpio, mask, value);
+    return i2c_gpio->vtable->pull_en(i2c_gpio, mask, enable, bias);
 }
 
 static inline
