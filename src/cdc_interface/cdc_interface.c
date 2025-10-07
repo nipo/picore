@@ -71,7 +71,7 @@ void handler(struct pr_task *task)
             intf->events |= PR_CDC_INTERFACE_EVENT_RX;
         }
 
-        pr_task_exec_in_ms(&intf->handler, 10);
+        pr_task_exec_in_ms(&intf->handler, 100);
     } else {
         if (intf->open) {
             intf->open = 0;
