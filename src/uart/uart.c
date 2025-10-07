@@ -121,8 +121,10 @@ void pr_uart_init(struct pr_uart *uart,
 
     instance_bit |= uart_bit_for_pin(rx);
     instance_bit |= uart_bit_for_pin(tx);
-    instance_bit |= uart_bit_for_pin(cts);
-    instance_bit |= uart_bit_for_pin(rts);
+    if (cts < 30)
+        instance_bit |= uart_bit_for_pin(cts);
+    if (rts < 30)
+        instance_bit |= uart_bit_for_pin(rts);
 
     // Only one selected
     assert(instance_bit);
@@ -162,8 +164,9 @@ void pr_uart_init(struct pr_uart *uart,
     uart->to_port = NULL;
     uart->rxbuf_free = 1;
 
-    irq_add_shared_handler(UART0_IRQ + instance, instance ? on_uart1_io : on_uart0_io, PICO_SHARED_IRQ_HANDLER_DEFAULT_ORDER_PRIORITY);
-    user_irq_claim(UART0_IRQ + instance);
+    irq_set_exclusive_handler(UART0_IRQ + instance,
+                              instance ? on_uart1_io : on_uart0_io);
+//    user_irq_claim(UART0_IRQ + instance);
     irq_set_enabled(UART0_IRQ + instance, 1);
 }
 
