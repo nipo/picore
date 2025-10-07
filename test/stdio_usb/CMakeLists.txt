@@ -5,10 +5,12 @@ target_link_libraries(stdio_usb
                       pico_stdlib
                       pico_stdio
                       pico_unique_id
+                      pr_fifo
+                      pr_task
                       pr_tiny_usb
                       pr_cdc_interface
-                      tinyusb_device
                       pr_stdio_fifo
+                      tinyusb_device
                       )
 
 pico_add_extra_outputs(stdio_usb)

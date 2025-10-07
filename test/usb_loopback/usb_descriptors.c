@@ -1,5 +1,6 @@
 #include <tusb.h>
 #include <pr/tiny_usb.h>
+#include "device/usbd_pvt.h"
 
 PR_TINY_USB_IMPL
 
@@ -8,13 +9,13 @@ PR_TINY_USB_IMPL
 #define USBD_VID 0x1234
 #define USBD_PID 0x5e01
 
-#define USBD_DESC_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN)
 #define USBD_MAX_POWER_MA 250
 
 enum usbd_intf_e
 {
     INTF_NO_SERIAL = 0,
     INTF_NO_SERIAL_DATA,
+    INTF_RPI_RESET,
     INTF_NO_TOTAL
 };
 
@@ -30,6 +31,7 @@ enum usbd_str_e
     STR_PRODUCT,
     STR_CONFIG,
     STR_SERIAL_INTF,
+    STR_RPI_RESET,
     // Keep serial last
     STR_SERIAL,
 };
@@ -51,19 +53,24 @@ static const tusb_desc_device_t usbd_desc_device = {
     .bNumConfigurations = 1,
 };
 
-static const uint8_t usbd_desc_cfg[USBD_DESC_LEN] = {
+#define USBD_DESC_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + PR_RPI_RESET_DESC_LEN)
+static const uint8_t usbd_desc_cfg[] = {
     TUD_CONFIG_DESCRIPTOR(1, INTF_NO_TOTAL, STR_CONFIG, USBD_DESC_LEN,
                           TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, USBD_MAX_POWER_MA),
 
     TUD_CDC_DESCRIPTOR(INTF_NO_SERIAL, STR_SERIAL_INTF, USBD_SERIAL_0_EP_CMD,
                        USBD_SERIAL_CMD_MAX_SIZE, USBD_SERIAL_0_EP_OUT, USBD_SERIAL_0_EP_IN,
                        USBD_SERIAL_IN_OUT_MAX_SIZE),
+
+    PR_RPI_RESET_DESCRIPTOR(INTF_RPI_RESET, STR_RPI_RESET),
 };
+static_assert(sizeof(usbd_desc_cfg) == USBD_DESC_LEN, "bla");
 
 static const char *const usbd_desc_str[] = {
     [STR_MANUF] = "Picore",
     [STR_PRODUCT] = "USB Loopback demo",
     [STR_CONFIG] = "Main",
+    [STR_RPI_RESET] = "Reset",
     [STR_SERIAL_INTF] = "",
 };
 
@@ -105,4 +112,9 @@ const uint16_t *tud_descriptor_string_cb(uint8_t index, uint16_t langid)
     desc_str[0] = (TUSB_DESC_STRING << 8) | (2 * len + 2);
 
     return desc_str;
+}
+
+usbd_class_driver_t const *usbd_app_driver_get_cb(uint8_t *driver_count) {
+    *driver_count = 1;
+    return &pr_rpi_resetd_driver;
 }

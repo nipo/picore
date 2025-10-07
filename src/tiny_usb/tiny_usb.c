@@ -4,6 +4,9 @@
 #include <pico/unique_id.h>
 #include <pr/crc32.h>
 
+
+uint8_t pr_rpi_resetd_itf_num;
+
 static
 uint16_t to_hex(uint8_t v)
 {

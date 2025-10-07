@@ -1,5 +1,6 @@
 #include <tusb.h>
 #include <pr/tiny_usb.h>
+#include "device/usbd_pvt.h"
 
 PR_TINY_USB_IMPL
 
@@ -8,7 +9,6 @@ PR_TINY_USB_IMPL
 #define USBD_VID 0xdead
 #define USBD_PID 0x4466
 
-#define USBD_DESC_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN)
 #define USBD_MAX_POWER_MA 250
 
 enum usbd_intf_e
@@ -51,7 +51,8 @@ static const tusb_desc_device_t usbd_desc_device = {
     .bNumConfigurations = 1,
 };
 
-static const uint8_t usbd_desc_cfg[USBD_DESC_LEN] = {
+#define USBD_DESC_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN)
+static const uint8_t usbd_desc_cfg[] = {
     TUD_CONFIG_DESCRIPTOR(1, INTF_NO_TOTAL, STR_CONFIG, USBD_DESC_LEN,
                           TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, USBD_MAX_POWER_MA),
 
@@ -59,6 +60,8 @@ static const uint8_t usbd_desc_cfg[USBD_DESC_LEN] = {
                        USBD_SERIAL_CMD_MAX_SIZE, USBD_SERIAL_0_EP_OUT, USBD_SERIAL_0_EP_IN,
                        USBD_SERIAL_IN_OUT_MAX_SIZE),
 };
+
+static_assert(sizeof(usbd_desc_cfg) == USBD_DESC_LEN, "bla");
 
 static const char *const usbd_desc_str[] = {
     [STR_MANUF] = "PicoRE",
