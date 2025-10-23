@@ -15,22 +15,25 @@ typedef void pr_task_handler_t(struct pr_task *);
     PR_STRUCT_COMPOSE(struct_name, pr_task, field)
 
 #define PR_TASK_FLAG_PENDING 1
+#define PR_TASK_FLAG_WAITING 2
 
 struct pr_task
 {
     struct pr_task *next;
     uint32_t flags;
-    alarm_id_t alarm;
     struct pr_task_queue *queue;
     pr_task_handler_t *handler;
+    absolute_time_t exec_at;
 };
 
 struct pr_task_queue
 {
     struct pr_task *first;
     struct pr_task *last;
+    struct pr_task *waiting;
     spin_lock_t *lock;
     int lock_no;
+    alarm_id_t alarm;
 };
 
 void pr_task_init(struct pr_task *task,
