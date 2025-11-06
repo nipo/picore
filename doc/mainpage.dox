@@ -1,0 +1,217 @@
+/**
+ * @mainpage Pico-RE: Pico Runtime Environment
+ *
+ * @section intro_sec Introduction
+ *
+ * Pico-RE (Pico Runtime Environment) is an addon library for the Raspberry Pi
+ * Pico SDK that provides a cooperative task scheduling model and communication
+ * primitives for embedded applications.
+ *
+ * The library enables efficient non-preemptive multitasking with automatic
+ * task scheduling, ring buffers with producer-consumer notifications, and
+ * task-based hardware abstraction for peripherals like UART, USB, I2C, and SPI.
+ *
+ * @section features_sec Key Features
+ *
+ * - **Cooperative Task Scheduling**: Non-preemptive round-robin task execution
+ * - **Communication Primitives**: Task-integrated FIFOs and queues
+ * - **Hardware Abstraction**: Task-based drivers for UART, USB CDC, I2C, SPI, GPIO
+ * - **Zero-Copy Operations**: Efficient buffer access without data copying
+ * - **Thread-Safe**: Spin lock protection for multi-core and interrupt contexts
+ * - **Modular Design**: Use only the components you need
+ *
+ * @section getting_started Getting Started
+ *
+ * @subsection integration Integration
+ *
+ * To use Pico-RE in your project:
+ *
+ * 1. Copy `external/picore_import.cmake` to your project directory
+ * 2. Set `PICORE_PATH` environment variable or place picore as a sibling to pico-sdk
+ * 3. Include the import scripts in your CMakeLists.txt:
+ *
+ * @code{.cmake}
+ * cmake_minimum_required(VERSION 3.12)
+ *
+ * include(pico_sdk_import.cmake)
+ * include(picore_import.cmake)
+ *
+ * project(my_project C CXX)
+ * set(CMAKE_C_STANDARD 11)
+ * set(CMAKE_CXX_STANDARD 17)
+ *
+ * pico_sdk_init()
+ *
+ * add_executable(my_app main.c)
+ * target_link_libraries(my_app
+ *     pr_task
+ *     pr_fifo
+ *     pr_uart
+ *     # Add other picore libraries as needed
+ * )
+ * @endcode
+ *
+ * @subsection basic_example Basic Example
+ *
+ * Here's a minimal application using the task scheduler:
+ *
+ * @code{.c}
+ * #include <pr/task.h>
+ *
+ * struct app_context {
+ *     struct pr_task_queue queue;
+ *     struct pr_task my_task;
+ * };
+ *
+ * PR_TASK_STRUCT_COMPOSE(app_context, my_task);
+ *
+ * static void my_handler(struct pr_task *task) {
+ *     struct app_context *app = app_context_from_my_task(task);
+ *
+ *     // Do some work...
+ *
+ *     // Reschedule after 1 second
+ *     pr_task_exec_in_ms(task, 1000);
+ * }
+ *
+ * int main(void) {
+ *     struct app_context app[1];
+ *
+ *     pr_task_queue_init(&app->queue);
+ *     pr_task_init(&app->my_task, &app->queue, my_handler);
+ *     pr_task_exec(&app->my_task);
+ *
+ *     // Main event loop
+ *     for (;;) {
+ *         pr_task_queue_run_until_empty(&app->queue);
+ *     }
+ *
+ *     return 0;
+ * }
+ * @endcode
+ *
+ * @section architecture Architecture
+ *
+ * @subsection arch_tasks Task System
+ *
+ * The task system (@ref pr_task) is the foundation of Pico-RE. Tasks are
+ * scheduled in a queue and executed cooperatively in round-robin order.
+ * Each task runs to completion without preemption.
+ *
+ * Tasks can be scheduled:
+ * - Immediately with pr_task_exec()
+ * - After a delay with pr_task_exec_in_us() or pr_task_exec_in_ms()
+ *
+ * @subsection arch_fifo FIFO Buffers
+ *
+ * FIFOs (@ref pr_fifo) are ring buffers that automatically schedule tasks
+ * when data becomes available or space becomes free. This enables efficient
+ * producer-consumer patterns without polling.
+ *
+ * Key features:
+ * - Automatic consumer task scheduling when data arrives
+ * - Automatic producer task scheduling when space becomes available
+ * - Zero-copy operations via prepare/done API
+ * - Suitable for streaming data (UART, USB, etc.)
+ *
+ * @subsection arch_queue Queues
+ *
+ * Queues (@ref pr_queue) are similar to FIFOs but exchange pointers to
+ * arbitrary structures instead of byte streams. Useful for passing messages
+ * or events between tasks.
+ *
+ * @section modules_sec Library Modules
+ *
+ * @subsection core_modules Core Modules
+ * - @ref pr_task - Cooperative task scheduler
+ * - @ref pr_fifo - Task-integrated FIFO ring buffers
+ * - @ref pr_queue - Task-integrated pointer queues
+ * - @ref pr_error - Error code definitions
+ *
+ * @subsection hw_modules Hardware Integration
+ * - @ref pr_uart - Asynchronous UART with FIFO interface
+ * - @ref pr_tiny_usb - TinyUSB integration as tasks
+ * - @ref pr_cdc_interface - USB CDC with FIFO interface
+ * - @ref pr_i2c_bus - I2C bus abstraction
+ * - @ref pr_i2c_eeprom - I2C EEPROM access
+ * - @ref pr_i2c_gpio - I2C GPIO expander support
+ * - @ref pr_spi_master - SPI master interface
+ * - @ref pr_gpio_irq - GPIO interrupt handling
+ * - @ref pr_button - Button debouncing and events
+ * - @ref pr_pixel_led - WS2812/NeoPixel driver (PIO)
+ * - @ref pr_modbus - Modbus RTU protocol
+ *
+ * @subsection util_modules Utility Modules
+ * - @ref pr_crc32 - CRC32 calculation
+ * - @ref pr_endian - Endian conversion utilities
+ * - @ref pr_build_id - Build identifier generation
+ * - @ref pr_binary_info_reader - Binary info reader
+ * - @ref pr_chip_uid32 - Chip unique ID
+ * - @ref pr_struct_compose - Container-of macros
+ * - @ref pr_stdio_fifo - Stdio to FIFO binding
+ *
+ * @section patterns Design Patterns
+ *
+ * @subsection pattern_compose Task Composition
+ *
+ * The library uses the "struct composition" pattern extensively. Tasks are
+ * embedded within larger application structures, and the PR_TASK_STRUCT_COMPOSE
+ * macro generates helper functions to retrieve the parent structure:
+ *
+ * @code{.c}
+ * struct my_context {
+ *     struct pr_task task;
+ *     int some_data;
+ * };
+ *
+ * PR_TASK_STRUCT_COMPOSE(my_context, task);
+ *
+ * void handler(struct pr_task *task) {
+ *     struct my_context *ctx = my_context_from_task(task);
+ *     // Access ctx->some_data
+ * }
+ * @endcode
+ *
+ * @subsection pattern_mainloop Main Loop Pattern
+ *
+ * All Pico-RE applications follow the same main loop pattern:
+ *
+ * @code{.c}
+ * int main(void) {
+ *     // Initialize resources
+ *     pr_task_queue_init(&queue);
+ *     // ... initialize tasks, FIFOs, hardware ...
+ *
+ *     // Schedule initial tasks
+ *     pr_task_exec(&some_task);
+ *
+ *     // Main event loop
+ *     for (;;) {
+ *         pr_task_queue_run_until_empty(&queue);
+ *     }
+ * }
+ * @endcode
+ *
+ * The event loop processes all pending tasks, with each task running to
+ * completion. Tasks schedule themselves or other tasks as needed.
+ *
+ * @section examples Examples
+ *
+ * Several example applications are provided in the `test/` directory:
+ *
+ * - **usb_loopback**: USB CDC loopback demonstrating FIFO usage
+ * - **stdio_usb**: Standard I/O over USB CDC
+ * - **ws2812_blinker**: WS2812 LED control using PIO
+ * - **modbus_responder**: Modbus RTU responder example
+ * - **binary_info**: Binary info reading example
+ *
+ * @section license License
+ *
+ * Pico-RE is open source. See the license.txt file in the repository for
+ * license information.
+ *
+ * @section links Useful Links
+ *
+ * - GitHub Repository: https://github.com/nipo/picore
+ * - Raspberry Pi Pico SDK: https://github.com/raspberrypi/pico-sdk
+ */
