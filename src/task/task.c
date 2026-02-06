@@ -211,10 +211,14 @@ void pr_task_exec_in_us(struct pr_task *task, uint64_t us)
     if (is_pending(task))
         return;
     
+    uint32_t irq = spin_lock_blocking(queue->lock);
+
     if (is_waiting(task))
         pr_task_wait_queue_remove(queue, task);
 
     pr_task_wait_queue_insert(queue, task, make_timeout_time_us(us));
+
+    spin_unlock(queue->lock, irq);
 
     queue_reschedule(queue);
 }
@@ -226,10 +230,14 @@ void pr_task_exec_in_ms(struct pr_task *task, uint64_t ms)
     if (is_pending(task))
         return;
 
+    uint32_t irq = spin_lock_blocking(queue->lock);
+
     if (is_waiting(task))
         pr_task_wait_queue_remove(queue, task);
 
     pr_task_wait_queue_insert(queue, task, make_timeout_time_ms(ms));
+
+    spin_unlock(queue->lock, irq);
 
     queue_reschedule(queue);
 }
