@@ -48,7 +48,7 @@ pr_error_t eeprom_24lc08_write(
 {
     bool first = true;
     pr_error_t err;
-    uint16_t retry_count = 1;
+    uint16_t retry_count = 128;
     uint8_t saddr;
     uint8_t buf[EEPROM_24LC08_ADDR_SIZE + EEPROM_24LC08_PAGE_SIZE];
 
@@ -135,7 +135,7 @@ pr_error_t eeprom_24aa64_write(
 {
     bool first = true;
     pr_error_t err;
-    uint16_t retry_count = 1;
+    uint16_t retry_count = 128;
     uint8_t saddr;
     uint8_t buf[EEPROM_24AA64_ADDR_SIZE + EEPROM_24AA64_PAGE_SIZE];
 
