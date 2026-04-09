@@ -18,6 +18,11 @@ void gpio_irq_callback(uint gpio, uint32_t event_mask)
 
     gpio_acknowledge_irq(gpio, event_mask);
 
+    // For level-triggered interrupts, disable until the task re-enables.
+    // Otherwise the IRQ fires continuously while the pin stays asserted.
+    if (event_mask & (GPIO_IRQ_LEVEL_LOW | GPIO_IRQ_LEVEL_HIGH))
+        gpio_set_irq_enabled(gpio, event_mask, false);
+
     if (!h)
         return;
 
