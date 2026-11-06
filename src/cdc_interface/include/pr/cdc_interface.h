@@ -79,7 +79,7 @@
 #define PR_CDC_INTERFACE_EVENT_LC 8
 
 /**
- * @brief Event flag: Flow control state changed
+ * @brief Event flag: Line state (DTR, RTS) changed
  */
 #define PR_CDC_INTERFACE_EVENT_CTSRTS 16
 
@@ -91,6 +91,7 @@
 struct pr_cdc_interface {
     cdc_line_coding_t lc;       /**< Current line coding (baud, parity, etc.) */
     bool ctsrts;                /**< Flow control enabled state */
+    bool dtr;                   /**< DTR line state set by the host */
     uint8_t open;               /**< Connection state (0=closed, 1=open) */
     uint8_t index;              /**< CDC interface index */
     uint8_t events;             /**< Pending event flags (PR_CDC_INTERFACE_EVENT_*) */

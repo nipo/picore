@@ -124,6 +124,7 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
         return;
     
     intf->ctsrts = rts;
+    intf->dtr = dtr;
 
     intf->events |= PR_CDC_INTERFACE_EVENT_CTSRTS;
     pr_task_exec(intf->on_event);
@@ -142,6 +143,7 @@ void pr_cdc_interface_init(struct pr_cdc_interface *intf,
     intf->from_usb = from_usb;
     intf->events = 0;
     intf->open = 0;
+    intf->dtr = false;
     intf->index = cdc_index;
     intf->lc.bit_rate = 115200;
     intf->lc.data_bits = 8;
