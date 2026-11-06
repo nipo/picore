@@ -225,7 +225,6 @@ size_t pr_fifo_read(struct pr_fifo *fifo,
         return 0;
     
     do {
-        size_t transferred;
         const uint8_t *src;
 
         transferred = pr_fifo_read_prepare(fifo, size - done, &src);
